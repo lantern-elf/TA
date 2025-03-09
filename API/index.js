@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql')
 const app = express()
+const cors = require('cors')
 
 const host = "localhost"
 const port = 3001
@@ -19,12 +20,15 @@ database.connect((err) =>{
 })
 
 //Main gates of API
+app.use(cors())
+
 app.get("/", (req, res) => {
     res.send("Wellcome to API")
 }) 
 
 app.get("/users", (req, res) => {
-   database.query("SELECT * FROM users", (err, rows) => {
+    console.log("User Requested")
+    database.query("SELECT * FROM users", (err, rows) => {
        if(err) throw err
        res.json({
             success: true,
