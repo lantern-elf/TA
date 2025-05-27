@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./style.css";
 
 const Test = () => {
     const API_URL = "http://localhost:3001/users";
     const [users, setUsers] = useState([]);
-    const [userDataToEdit, setUserDataToEdit] = useState({
-        name: "",
-        email: "",
-        password_hash: "",
-        role: "",
-    });
+    const [userDataToEdit, setUserDataToEdit] = useState({});
     const [isEditShow, setIsEditShow] = useState()
     const [formData, setFormData] = useState({
+        id: null,
         name: "",
         email: "",
-        password_hash: "",
-        role: "",
+        password: ""
     });
+    const navigate = useNavigate();
+    const handleView = (id) => {
+        navigate(`/test/${id}`);
+    };
 
     // Fetch users from API
     const fetchUsers = async () => {
@@ -64,7 +65,7 @@ const Test = () => {
             setFormData({
                 name: "",
                 email: "",
-                password_hash: "",
+                password: "",
                 role: "",
             });
         } 
@@ -73,28 +74,39 @@ const Test = () => {
         }
     };
 
-    const handleEditModal = async(id) => {
+    const handleEditChange = (e) => {
+        setUserDataToEdit({ ...userDataToEdit, [e.target.name]: e.target.value });
+    };
+
+    const handleEditModal = async (id) => {
         try {
             const response = await fetch(`${API_URL}/${id}`);
             const result = await response.json();
-            if (result[0]?.payload?.data) {
-                setUserDataToEdit(result[0].payload.data);
-                console.log(userDataToEdit)
-                setIsEditShow(true)
+
+            console.log("Full API Response:", result);
+            
+            if (Array.isArray(result[0]?.payload?.data) && result[0].payload.data.length > 0) {
+                const userData = result[0].payload.data[0]; // Select the first object
+                console.log("User Data Found (Before Set State):", userData);
+
+                setUserDataToEdit(userData);
+
+                // Use a `useEffect` to observe `userDataToEdit` instead of logging right after setting state
+                console.log("UserDataToEdit (After Set State, inside useEffect):", userData);
+                
+                setIsEditShow(true);
+            } else {
+                console.error("No user data found", result?.payload?.data);
             }
         } catch (error) {
-            console.error("Error fetching users:", error);
+            console.error("Error fetching user data:", error);
         }
-    }
+    };
+
 
     const handleCloseEditModal = () => {
         setIsEditShow(false)
-        setUserDataToEdit({
-            name: "",
-            email: "",
-            password_hash: "",
-            role: "",
-        });
+        setUserDataToEdit({});
     }
 
     const handleEdit = async (e) => {
@@ -113,14 +125,10 @@ const Test = () => {
 
             // Refresh the user list after successful submission
             fetchUsers();
+            setIsEditShow(false)
 
             // Reset form fields
-            setUserDataToEdit({
-                name: "",
-                email: "",
-                password_hash: "",
-                role: "",
-            });
+            setUserDataToEdit({});
         } 
         catch (error) {
             console.error("Error submitting form:", error);
@@ -173,7 +181,7 @@ const Test = () => {
                                 <td>{user.created_at}</td>
                                 <td align="center"><button onClick={() => handleDelete(user.id)}>Delete</button></td>
                                 <td align="center"><button onClick={() => {handleEditModal(user.id)} }>Edit</button></td>
-                                <td align="center"><button>view</button></td>
+                                <td align="center"><button onClick={() => handleView(user.id)}>view</button></td>
                             </tr>
                         ))
                     ) : (
@@ -196,7 +204,7 @@ const Test = () => {
                 <br /><br />
                 
                 <label>Password:</label><br />
-                <input type="password" name="password_hash" value={formData.password_hash} onChange={handleChange} required />
+                <input type="password" name="password" value={formData.password_hash} onChange={handleChange} required />
                 <br /><br />
                 
                 <label>Role:</label><br />
@@ -212,21 +220,21 @@ const Test = () => {
                     <button onClick={() => handleCloseEditModal()} className="close-modal">
                         close
                     </button>
-                    <form onSubmit={handleEdit} action="">
+                    <form onSubmit={handleEdit}>
+                        <label>ID:</label><br />
+                        <input type="text" name="id" value={userDataToEdit.id || ""} readOnly />
+                        <br /><br />
+
                         <label>Name:</label><br />
-                        <input type="text" name="name" value={userDataToEdit.name} required />
+                        <input type="text" name="name" value={userDataToEdit.name} onChange={handleEditChange} required />
                         <br /><br />
 
                         <label>Email:</label><br />
-                        <input type="email" name="email" value={userDataToEdit.email} required />
-                        <br /><br />
-                        
-                        <label>Password:</label><br />
-                        <input type="password" name="password_hash" value={userDataToEdit.password_hash} required />
+                        <input type="email" name="email" value={userDataToEdit.email} onChange={handleEditChange} required />
                         <br /><br />
                         
                         <label>Role:</label><br />
-                        <input type="text" name="role" value={userDataToEdit.role} required />
+                        <input type="text" name="role" value={userDataToEdit.role} onChange={handleEditChange} required />
                         <br /><br />
 
                         <input type="submit" value="Submit" />
