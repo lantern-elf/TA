@@ -1,7 +1,13 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Navbar = ({home=false, login=false}) => {
     const navigate = useNavigate()
+    const { user, logout } = useAuth();
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+      };
     return(
         <nav className="navbar navbar-expand-lg bg-light" style={{ height: '8vh' }}>
             <div className="container-fluid">
@@ -17,7 +23,7 @@ const Navbar = ({home=false, login=false}) => {
                             <a className={`nav-link ${home ? 'active' : ``}`} href="#" onClick={() => navigate('/home')}>Home</a>
                         </li>
                         <li className="nav-item">
-                            <a className={`nav-link ${login ? 'active' : ``}`} href="/login">Login</a>
+                            <a className="nav-link pe-auto" href="" onClick={handleLogout}>Logout</a>
                         </li>
                     </ul>
                 </div>

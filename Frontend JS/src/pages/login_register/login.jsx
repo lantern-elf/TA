@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
+  const { login } = useAuth();
   const navigate = useNavigate()
   const endPoint = "http://localhost:3001/login"
   const [formData, setFormData] = useState({
@@ -23,9 +25,12 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
       const data = await response.json();
-      if (data[0].payload.data){
-        const role = data[0].payload.data.role
-        navigate('/home')
+      if (data[0]?.payload?.data) {
+        const id = data[0].payload.data.id
+        const name = data[0].payload.data.name
+        const role = data[0].payload.data.role;
+        login({ id, name, role, email: formData.email }); // Save to context
+        navigate('/home');
       }
 
       setFormData({

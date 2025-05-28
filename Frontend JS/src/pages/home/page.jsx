@@ -1,7 +1,9 @@
 import { Helmet } from "react-helmet"
 import Navbar from "../../components/navbar/Navbar"
+import { useAuth } from "../../context/AuthContext";
 
 const Home = () => {
+    const { user } = useAuth();
     return(
         <>
             <Helmet>
@@ -9,7 +11,9 @@ const Home = () => {
             </Helmet>
             <Navbar home={true} />
             <main style={{height: '92vh'}}>
-                <div className="">Selamat Datang di Internflow</div>
+                <p>You are {user?.name}</p>
+                <p>Your ID is {user?.id}</p>
+                <p>Your role: {user?.role}</p>
             </main>
         </>
     )
