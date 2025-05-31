@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "./style.css";
+import Navbar from "../../components/navbar/Navbar";
 
 const Test = () => {
     const API_URL = "http://localhost:3001/users";
@@ -155,7 +156,8 @@ const Test = () => {
     }
 
     return (
-        <>
+        <>  
+            <Navbar test={true} />
             <h1>List Data</h1>
             <table>
                 <thead>
