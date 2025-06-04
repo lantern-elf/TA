@@ -9,9 +9,16 @@ const Navbar = ({home=false, tasks=false, manage=false, test=false}) => {
         navigate("/login");
       };
     return(
-        <nav className="navbar navbar-expand-lg bg-light" style={{ height: '8vh' }}>
+        <nav className="navbar navbar-expand-lg bg-light sticky-top" style={{ height: '8vh' }}>
             <div className="container-fluid">
-                <a className="navbar-brand" href="/">Internflow</a>
+                <a className="navbar-brand" href="/">
+                    Internflow 
+                    {
+                        user?.role === 'admin' && (
+                            <small className="text-muted"> admin</small>
+                        )
+                    }
+                </a>
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
@@ -21,17 +28,23 @@ const Navbar = ({home=false, tasks=false, manage=false, test=false}) => {
                         <li className="nav-item">
                             <a className={`nav-link ${home ? 'active' : ``}`} href="" onClick={() => navigate('/home')}>Home</a>
                         </li>
-                        <li className="nav-item">
-                            <a className={`nav-link ${tasks ? 'active' : ``}`} href="" onClick={() => navigate('/tasks')}>Tasks</a>
-                        </li>
+                        {
+                            user?.role === 'intern' && (
+                                <>
+                                    <li className="nav-item">
+                                    <a className={`nav-link ${tasks ? 'active' : ``}`} href="" onClick={() => navigate('/tasks')}>Tasks</a>
+                                    </li>
+                                </>
+                            )
+                        }
                         {
                             user?.role === 'admin' && (
                                 <>
                                     <li className="nav-item">
-                                        <a className={`nav-link ${user.role == 'admin' ? '' : 'd-none'} ${manage ? 'active' : ``}`} href="" onClick={() => navigate('/manage')}>Manage</a>
+                                        <a className={`nav-link ${manage ? 'active' : ``}`} href="" onClick={() => navigate('/manage')}>Manage</a>
                                     </li>
                                     <li className="nav-item">
-                                        <a className={`nav-link ${user.role == 'admin' ? '' : 'd-none'} ${test ? 'active' : ``}`} href="" onClick={() => navigate('/test')}>Test</a>
+                                        <a className={`nav-link ${test ? 'active' : ``}`} href="" onClick={() => navigate('/test')}>Test</a>
                                     </li>
                                 </>
                             )

@@ -52,12 +52,12 @@ app.get("/users/:id", (req, res) => {
 
 //Submit Users Data
 app.post("/users", async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, password} = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(password, 13); // Hash the plain password
-        const sql = `INSERT INTO ${tableName} (name, email, password_hash, role) VALUES (?, ?, ?, ?)`;
-        const values = [name, email, hashedPassword, role];
+        const sql = `INSERT INTO ${tableName} (name, password_hash) VALUES (?, ?)`;
+        const values = [name, hashedPassword];
         database.query(sql, values, (err, fields) => {
             if (err) return response(500, null, "Error adding user", res);
             if (fields?.affectedRows) {
@@ -71,10 +71,10 @@ app.post("/users", async (req, res) => {
 
 //Update Data
 app.put("/users", async (req, res) => {
-    const { id, name, email, role } = req.body;
+    const { id, name, role } = req.body;
     try {
-        const sql = `UPDATE ${tableName} SET name = ?, email = ?, role = ? WHERE id = ?`;
-        const values = [name, email, role, id];
+        const sql = `UPDATE ${tableName} SET name = ?, role = ? WHERE id = ?`;
+        const values = [name, role, id];
 
         database.query(sql, values, (err, fields) => {
             if (err) return response(500, null, "Error updating user", res);
@@ -104,14 +104,14 @@ app.delete("/users", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-    const { email, password } = req.body;
+    const { id, password } = req.body;
 
     // Find user by email
-    const sql = `SELECT * FROM ${tableName} WHERE email = ?`;
-    database.query(sql, [email], async (err, result) => {
+    const sql = `SELECT * FROM ${tableName} WHERE id = ?`;
+    database.query(sql, [id], async (err, result) => {
         if (err) return response(500, null, "Database error", res);
         if (result.length === 0) {
-            return response(401, null, "Email not registered", res);
+            return response(401, null, "ID not registered", res);
         }
 
         const user = result[0];
@@ -143,27 +143,41 @@ app.get("/tasks", (req, res) => {
     });
 });
 
-app.post("/tasks", async (req, res) => {
-    const { user_id, title, description, status, due_date } = req.body;
+app.post("/tasks", (req, res) => {
+    const { user_ids, title, description, status, due_date } = req.body;
 
     const sql = `
-        INSERT INTO tasks (user_id, title, description, status, due_date)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO tasks (title, description, status, due_date)
+        VALUES (?, ?, ?, ?)
     `;
-    const values = [user_id, title, description, status || 'in_progress', due_date];
+    const values = [title, description, status || 'in_progress', due_date];
 
     database.query(sql, values, (err, result) => {
         if (err) return response(500, null, "Error creating task", res);
-        response(201, result, "Task created successfully", res);
+
+        const taskId = result.insertId;
+
+        // Insert into task_users
+        const bridgeValues = user_ids.map(user_id => [taskId, user_id]);
+        const bridgeSql = `INSERT INTO task_users (task_id, user_id) VALUES ?`;
+
+        database.query(bridgeSql, [bridgeValues], (err2, result2) => {
+            if (err2) return response(500, null, "Error assigning users to task", res);
+            response(201, { taskId, assigned: result2.affectedRows }, "Task created and assigned", res);
+        });
     });
 });
 
 app.get("/tasks/user/:user_id", (req, res) => {
     const { user_id } = req.params;
 
-    const sql = `SELECT * FROM tasks WHERE user_id = ?`;
+    const sql = `
+        SELECT tasks.* FROM tasks
+        JOIN task_users ON tasks.id = task_users.task_id
+        WHERE task_users.user_id = ?
+    `;
     database.query(sql, [user_id], (err, rows) => {
-        if (err) return response(500, null, "Error fetching user tasks", res);
+        if (err) return response(500, null, "Error fetching user's tasks", res);
         response(200, rows, "Succeed Getting User's Tasks", res);
     });
 });
@@ -171,10 +185,23 @@ app.get("/tasks/user/:user_id", (req, res) => {
 app.get("/tasks/:id", (req, res) => {
     const { id } = req.params;
 
-    const sql = `SELECT * FROM tasks WHERE id = ?`;
-    database.query(sql, [id], (err, row) => {
+    const sqlTask = `SELECT * FROM tasks WHERE id = ?`;
+    const sqlUsers = `
+        SELECT users.id, users.name, users.email, users.role
+        FROM users
+        JOIN task_users ON users.id = task_users.user_id
+        WHERE task_users.task_id = ?
+    `;
+
+    database.query(sqlTask, [id], (err, taskRows) => {
         if (err) return response(500, null, "Error fetching task", res);
-        response(200, row, "Succeed Getting Task", res);
+        if (taskRows.length === 0) return response(404, null, "Task not found", res);
+
+        database.query(sqlUsers, [id], (err2, userRows) => {
+            if (err2) return response(500, null, "Error fetching assigned users", res);
+
+            response(200, { ...taskRows[0], assigned_users: userRows }, "Succeed Getting Task & Assigned Users", res);
+        });
     });
 });
 
@@ -202,14 +229,20 @@ app.put("/tasks", (req, res) => {
 app.delete("/tasks", (req, res) => {
     const { id } = req.body;
 
-    const sql = `DELETE FROM tasks WHERE id = ?`;
-    database.query(sql, [id], (err, fields) => {
-        if (err) return response(500, null, "Error deleting task", res);
-        if (fields?.affectedRows) {
-            response(200, fields, "Succeed Deleting Task", res);
-        } else {
-            response(404, null, "Task not found", res);
-        }
+    const deleteBridgeSql = `DELETE FROM task_users WHERE task_id = ?`;
+    const deleteTaskSql = `DELETE FROM tasks WHERE id = ?`;
+
+    database.query(deleteBridgeSql, [id], (err1) => {
+        if (err1) return response(500, null, "Error deleting task assignments", res);
+
+        database.query(deleteTaskSql, [id], (err2, fields) => {
+            if (err2) return response(500, null, "Error deleting task", res);
+            if (fields?.affectedRows) {
+                response(200, fields, "Succeed Deleting Task", res);
+            } else {
+                response(404, null, "Task not found", res);
+            }
+        });
     });
 });
 

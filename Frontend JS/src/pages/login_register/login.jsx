@@ -7,7 +7,7 @@ const Login = () => {
   const navigate = useNavigate();
   const endPoint = "http://localhost:3001/login";
   const [formData, setFormData] = useState({
-    email: "",
+    id: "",
     password: "",
   });
 
@@ -31,12 +31,12 @@ const Login = () => {
         const id = data[0].payload.data.id;
         const name = data[0].payload.data.name;
         const role = data[0].payload.data.role;
-        login({ id, name, role, email: formData.email }); // Save to context
+        login({ id, name, role }); // Save to context
         navigate("/home");
       }
 
       setFormData({
-        email: "",
+        id: "",
         password: "",
       });
     } catch (error) {
@@ -54,13 +54,11 @@ const Login = () => {
         <div className="d-flex flex-column gap-3 col-12 col-sm-3 p-sm-2">
           <h3>Sign In</h3>
           <div className="">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">User ID</label>
             <input
-              placeholder="example@exam.com"
-              value={formData.email}
+              value={formData.id}
               onChange={handleChange}
-              name="email"
-              type="email"
+              name="id"
               className="form-control"
               required
             />

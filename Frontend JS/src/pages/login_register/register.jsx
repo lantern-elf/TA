@@ -6,11 +6,9 @@ const Register = () => {
     const endPoint = "http://localhost:3001/users";
     const [formData, setFormData] = useState({
         name: "",
-        email: "",
         createPassword: "",
         confirmPassword: "",
         password: "",  // Will be assigned after validation
-        role: "intern"
     });
 
     const handleChange = (e) => {
@@ -20,7 +18,7 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const { name, email, createPassword, confirmPassword, role } = formData;
+        const { name, createPassword, confirmPassword, role } = formData;
 
         if (createPassword !== confirmPassword) {
             alert("Passwords do not match!");
@@ -29,9 +27,7 @@ const Register = () => {
 
         const finalData = {
             name,
-            email,
             password: createPassword, // validated
-            role,
         };
 
         try {
@@ -62,10 +58,6 @@ const Register = () => {
                     <div className="mb-3">
                         <label className="form-label">Name</label>
                         <input placeholder="Jonh Doe" onChange={handleChange} name="name" type="text" className="form-control" required />
-                    </div>
-                    <div className="mb-3">
-                        <label className="form-label">Email address</label>
-                        <input placeholder="example@exam.com" onChange={handleChange} name="email" type="email" className="form-control" required />
                     </div>
                     <div className="mb-3">
                         <label className="form-label">Create Password</label>

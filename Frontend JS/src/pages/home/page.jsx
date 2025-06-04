@@ -13,15 +13,6 @@ const Home = () => {
                 <title>Home | Internflow</title>
             </Helmet>
             <Navbar home={true} />
-            {
-                isAdmin && (
-                    <main style={{ height: '92vh' }}>
-                        <p>You are {user?.name}</p>
-                        <p>Your ID is {user?.id}</p>
-                        <p>Your role: {user?.role}</p>
-                    </main>
-                )
-            }
         </>
     )
 }
