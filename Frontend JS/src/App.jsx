@@ -11,6 +11,7 @@ import Register from './pages/login_register/register';
 import ProtectedRoute from './components/ProtectedRoute';
 import Manage from './pages/manage/page';
 import UserView from './pages/user/userView';
+import TaskView from './pages/tasks/taskView';
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
               <Tasks />
             </ProtectedRoute>
           }/>
+          <Route path="/task/:id" element={<TaskView />} />
           <Route path="/about" element={<About />} />
           <Route path="/test" element={
             <ProtectedRoute requiredRole='admin'>

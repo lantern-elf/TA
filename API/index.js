@@ -120,7 +120,7 @@ app.post("/login", (req, res) => {
             // Compare hashed password
             const match = await bcrypt.compare(password, user.password_hash);
             if (!match) {
-                return response(401, null, "Incorrect password", res);
+                return response(401, null, "Incorrect User ID or password", res);
             }
 
             // Don't send password hash back
@@ -182,12 +182,12 @@ app.get("/tasks/user/:user_id", (req, res) => {
     });
 });
 
-app.get("/tasks/:id", (req, res) => {
+app.get("/task/:id", (req, res) => {
     const { id } = req.params;
 
     const sqlTask = `SELECT * FROM tasks WHERE id = ?`;
     const sqlUsers = `
-        SELECT users.id, users.name, users.email, users.role
+        SELECT users.id, users.name, users.role
         FROM users
         JOIN task_users ON users.id = task_users.user_id
         WHERE task_users.task_id = ?
@@ -204,6 +204,7 @@ app.get("/tasks/:id", (req, res) => {
         });
     });
 });
+
 
 app.put("/tasks", (req, res) => {
     const { id, title, description, status, due_date } = req.body;

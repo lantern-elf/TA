@@ -2,13 +2,26 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
-import TasksCard from "../../components/tasksCard/TasksCard";
+import TasksCard from "../../components/tasksCard/tasksCard";
 
 const Manage = () => {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [tasks, setTasks] = useState([]);
 
+    const [newTask, setNewTask] = useState({
+        title: "",
+        description: "",
+        status: "in_progress",
+        due_date: "",
+        user_ids: [],
+    });
+
+    const isFormValid = () => {
+        const { title, description, due_date, user_ids } = newTask;
+        return title.trim() !== "" && description.trim() !== "" && due_date !== "" && user_ids.length > 0;
+    };
+    
     const fetchData = async () => {
         try {
             const [resUsers, resTasks] = await Promise.all([
@@ -17,7 +30,7 @@ const Manage = () => {
             ]);
 
             if (!resUsers.ok || !resTasks.ok) {
-                throw new Error("Failed to fetch users or tasks from the server.");
+                throw new Error("Failed to fetch users or tasks.");
             }
 
             const [resultUsers, resultTasks] = await Promise.all([
@@ -41,88 +54,216 @@ const Manage = () => {
             console.error("Error fetching data:", err);
         }
     };
-    
-    useEffect(() => {    
-        fetchData();
-    }, []);    
 
-    const handleDeleteUser = async (id) => {
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleDeleteTask = async (id) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this user?");
         if (!confirmDelete) return;
 
-        try{
-            const response = await fetch ("http://localhost:3001/users", {
+        try {
+            await fetch("http://localhost:3001/tasks", {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ id }),
             })
-            fetchData(); // Refresh the list after deletion
-        }
-        catch{
-            console.error("Error deleting user:", error);
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting task: ", error);
         }
     }
+
+    const handleDeleteUser = async (id) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+        if (!confirmDelete) return;
+
+        try {
+            await fetch("http://localhost:3001/users", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ id }),
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting user: ", error);
+        }
+    };
+
+    const handleTaskChange = (e) => {
+        const { name, value } = e.target;
+        setNewTask(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleUserSelect = (e) => {
+        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+        setNewTask(prev => ({ ...prev, user_ids: selected }));
+    };
+
+    const handleTaskSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch("http://localhost:3001/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newTask),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("Task created successfully!");
+                setNewTask({ title: "", description: "", status: "in_progress", due_date: "", user_ids: [] });
+                fetchData();
+            } else {
+                console.error("Error:", data.message);
+            }
+        } catch (error) {
+            console.error("Error submitting task:", error);
+        }
+    };
 
     return (
         <>
             <Navbar manage={true} />
-
             <div className="container-fluid mt-3">
-                <div className="row">
-                    {/* Left column - Users */}
-                    <div className="col-md-6 border-end">
+                <div className="row" style={{ height: "90vh" }}>
+                    {/* Column 1: Users */}
+                    <div className="col-md-4 border-end overflow-auto">
                         <h5 className="mb-3">Interns</h5>
-                        <table class="table table-light table-striped">
+                        <table className="table table-light table-striped">
                             <thead>
                                 <tr>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Role</th>
-                                    <th className="text-center" colSpan="3" scope="col">Action</th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Created At</th>
+                                    <th colSpan="2" className="text-center">Action</th>
                                 </tr>
                             </thead>
-                            {users.length > 0 ? (
-                                users.map((user) => (
-                                    <tbody key={user.id}>
-                                        <tr>
+                            <tbody>
+                                {users.length > 0 ? (
+                                    users.map((user) => (
+                                        <tr key={user.id}>
                                             <td>{user.id}</td>
                                             <td>{user.name}</td>
-                                            <td>{user.email}</td>
                                             <td className="text-capitalize">{user.role}</td>
-                                            <td align="center"><button onClick={() => handleDeleteUser(user.id)} className="btn btn-danger btn-sm">Delete</button></td>
-                                            <td align="center"><button className="btn btn-warning btn-sm">Edit</button></td>
+                                            <td>{new Date(user.created_at).toLocaleDateString()}</td>
                                             <td align="center"><button onClick={() => navigate(`/user/${user.id}`)} className="btn btn-info btn-sm">View</button></td>
+                                            <td align="center"><button onClick={() => handleDeleteUser(user.id)} className="btn btn-danger btn-sm">Delete</button></td>
                                         </tr>
-                                    </tbody>
-                                ))
-                            ) : (
-                                <p>No tasks found.</p>
-                            )
-                            }
+                                    ))
+                                ) : (
+                                    <tr><td colSpan="6">No users found.</td></tr>
+                                )}
+                            </tbody>
                         </table>
                     </div>
 
-                    {/* Right column - Tasks */}
-                    <div className="col-md-6">
-                        <h5 className="mb-3">Tasks</h5>
-                        <div className="d-grid gap-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',}}>
-                            {tasks.length > 0 ? (
-                                tasks.map((task) => (
-                                    <TasksCard
-                                        key={task.id}
-                                        cardTitle={task.title}
-                                        cardDescription={task.description}
-                                        status={task.status}
-                                        dueDate={task.due_date}
-                                    />
-                                ))
-                            ) : (
-                                <p>No tasks found.</p>
-                            )}
+                    {/* Column 2: Tasks (Scrollable) */}
+                    <div className="col-md-4 border-end d-flex flex-column overflow-auto">
+                    <h5 className="mb-3">Tasks</h5>
+                    <div className="flex-grow-1 overflow-auto">
+                        <div
+                        className="d-grid gap-3"
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}
+                        >
+                        {tasks.length > 0 ? (
+                            tasks.map(task => (
+                            <TasksCard
+                                key={task.id}
+                                taskId={task.id}
+                                cardTitle={task.title}
+                                cardDescription={task.description}
+                                status={task.status}
+                                dueDate={task.due_date}
+                                handleDelete={handleDeleteTask}
+                            />
+                            ))
+                        ) : (
+                            <p>No tasks found.</p>
+                        )}
                         </div>
+                    </div>
+                    </div>
+
+                    {/* Column 3: Task Input Form */}
+                    <div className="col-md-4" style={{ position: "sticky", top: "2rem" }}>
+                        <h5>Add New Task</h5>
+                        <form onSubmit={handleTaskSubmit}>
+                            <label>Title</label>
+                            <div className="mb-2">
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="title"
+                                    placeholder="Title"
+                                    value={newTask.title}
+                                    onChange={handleTaskChange}
+                                    required
+                                />
+                            </div>
+                            <label>Description</label>
+                            <div className="mb-2">
+                                <textarea
+                                    className="form-control"
+                                    name="description"
+                                    placeholder="Description"
+                                    value={newTask.description}
+                                    onChange={handleTaskChange}
+                                    required
+                                />
+                            </div>
+                            <label>Status</label>
+                            <div className="mb-2">
+                                <select
+                                    className="form-select"
+                                    name="status"
+                                    value={newTask.status}
+                                    onChange={handleTaskChange}
+                                >
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                            <label>Due Date</label>
+                            <div className="mb-2">
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    name="due_date"
+                                    value={newTask.due_date}
+                                    onChange={handleTaskChange}
+                                    required
+                                />
+                            </div>
+                            <label>Assign Users</label>
+                            <div className="mb-3">
+                                <select
+                                    multiple
+                                    className="form-select"
+                                    onChange={handleUserSelect}
+                                    value={newTask.user_ids}
+                                >
+                                    {users.map((user) => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button type="submit" className="btn btn-primary w-100" disabled={!isFormValid()}>
+                                Create Task
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

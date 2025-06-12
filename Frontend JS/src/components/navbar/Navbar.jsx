@@ -43,9 +43,9 @@ const Navbar = ({home=false, tasks=false, manage=false, test=false}) => {
                                     <li className="nav-item">
                                         <a className={`nav-link ${manage ? 'active' : ``}`} href="" onClick={() => navigate('/manage')}>Manage</a>
                                     </li>
-                                    <li className="nav-item">
+                                    {/* <li className="nav-item">
                                         <a className={`nav-link ${test ? 'active' : ``}`} href="" onClick={() => navigate('/test')}>Test</a>
-                                    </li>
+                                    </li> */}
                                 </>
                             )
                         }

@@ -10,7 +10,8 @@ const Login = () => {
     id: "",
     password: "",
   });
-
+  const [ loginError, setLoginError ] = useState(false)
+  const [ errorMessage, setErrorMessage ] = useState()
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -26,7 +27,14 @@ const Login = () => {
         },
         body: JSON.stringify(formData),
       });
+
       const data = await response.json();
+
+      if (!data.ok){
+        setLoginError(true)
+        setErrorMessage(data[0].payload.message)
+      }
+
       if (data[0]?.payload?.data) {
         const id = data[0].payload.data.id;
         const name = data[0].payload.data.name;
@@ -74,6 +82,9 @@ const Login = () => {
               required
             />
           </div>
+          {loginError === true && (
+            <span className="text-danger">{errorMessage}</span>
+          )}
           <button type="submit" className="btn btn-primary w-100">
             Sign In
           </button>

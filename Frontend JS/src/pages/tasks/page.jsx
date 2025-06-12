@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../components/navbar/Navbar";
-import TasksCard from "../../components/tasksCard/TasksCard"; 
+import TasksCard from "../../components/tasksCard/tasksCard"; 
 import { useAuth } from "../../context/AuthContext";
 
 const Tasks = () => {

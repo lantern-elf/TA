@@ -1,6 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-const TasksCard = ({ cardTitle='Card Title', cardDescription='This is the card description.', status='in_progress',  dueDate='' }) => {
+const TasksCard = ({ taskId, cardTitle='Card Title', cardDescription='This is the card description.', status='in_progress',  dueDate='', handleDelete }) => {
+    const navigate  = useNavigate()
     const { user } = useAuth()
     const formatStatus = (status) => {
         switch (status) {
@@ -30,10 +32,16 @@ const TasksCard = ({ cardTitle='Card Title', cardDescription='This is the card d
                         </p>
                     )}
 
-                    <div className="d-flex justify-content-between">
-                        {/* <a href="#" className="card-link">Edit</a>
-                        <a href="#" className="card-link text-danger">Delete</a> */}
-                        <button className="text-muted p-1 card rounded border">Submit</button>
+                    <div className="d-flex gap-3">
+                        {user?.role === 'intern' && (
+                            <button className="btn-sm btn btn-primary">Submit</button>
+                        )}
+                        {user?.role === 'admin' && (
+                            <>
+                                <button onClick={() => navigate(`/task/${taskId}`)} className="btn-sm btn btn-info">View</button>
+                                <button onClick={() => handleDelete(taskId)} className="btn-sm btn text-danger">Delete</button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
